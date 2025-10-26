@@ -1,0 +1,19 @@
+# Core ML and Deep Learning
+tensorflow>=2.13.0
+keras>=2.13.0
+
+# Para Active Learning
+scikit-learn>=1.3.0
+modAL-python>=0.4.1
+
+# Data handling and visualization
+numpy>=1.24.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+Pillow>=10.0.0
+
+# Progress bars and utilities
+tqdm>=4.65.0
+
+# Optional but useful
+seaborn>=0.12.0

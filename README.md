@@ -1,0 +1,1 @@
+Sistema de inspección visual inteligente que monitorea una línea de producción, decide qué imágenes almacenar/transferir basándose en Active Learning, y mejora continuamente su modelo de detección de defectos.
