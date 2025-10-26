@@ -1,8 +1,3 @@
-"""
-Análisis Visual de Uncertainty Sampling
-Muestra cómo el algoritmo selecciona las imágenes más inciertas
-"""
-
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow import keras
@@ -10,7 +5,7 @@ from pathlib import Path
 import sys
 
 # Importar funciones desde AL_functions.py
-sys.path.append('/root')
+sys.path.insert(0, '../..')
 from AL_functions import uncertainty_sampling
 
 
@@ -25,9 +20,8 @@ CLASS_NAMES = ['Airplane', 'Automobile', 'Ship']
 LABELED_SIZE = 500  # Primeras 500 para entrenar
 START_INDEX = 500   # Empezar análisis desde 501
 END_INDEX = 600     # Hasta 600 (100 imágenes)
-TOP_N = 50          # Seleccionar las 50 más inciertas
 
-MODEL_PATH = 'models/best_model.keras'  # o 'models/final_model.keras'
+MODEL_PATH = '../../models/500_train/best_model.keras'  # o 'models/final_model.keras'
 
 
 # ========================================
@@ -37,7 +31,7 @@ MODEL_PATH = 'models/best_model.keras'  # o 'models/final_model.keras'
 def load_data():
     """Carga CIFAR-10 filtrado"""
     
-    print("📥 Cargando CIFAR-10...")
+    print(" Cargando CIFAR-10...")
     (x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
     
     # Filtrar clases
@@ -52,22 +46,22 @@ def load_data():
     # Normalizar
     x_train = x_train.astype('float32') / 255.0
     
-    print(f"✓ Dataset: {len(x_train)} imágenes")
+    print(f" Dataset: {len(x_train)} imágenes")
     return x_train, y_train
 
 
 def load_model():
     """Carga el modelo entrenado"""
     
-    print(f"🧠 Cargando modelo: {MODEL_PATH}")
+    print(f" Cargando modelo: {MODEL_PATH}")
     
     if not Path(MODEL_PATH).exists():
-        print(f"❌ ERROR: No se encuentra el modelo en {MODEL_PATH}")
+        print(f" ERROR: No se encuentra el modelo en {MODEL_PATH}")
         print("   Ejecuta primero: python train.py")
         exit(1)
     
     model = keras.models.load_model(MODEL_PATH)
-    print("✓ Modelo cargado")
+    print(" Modelo cargado")
     return model
 
 
@@ -85,7 +79,7 @@ def calculate_uncertainty_scores(model, images):
         margin_scores: (N,) - margin de cada imagen
     """
     
-    print(f"🎲 Calculando uncertainty scores...")
+    print(f" Calculando uncertainty scores...")
     
     # Calcular probabilidades manualmente para mostrarlas
     probabilities = model.predict(images, verbose=0, batch_size=32)
@@ -94,7 +88,7 @@ def calculate_uncertainty_scores(model, images):
     _, entropy_scores = uncertainty_sampling(model, images, n_samples=len(images), method='entropy')
     _, margin_scores = uncertainty_sampling(model, images, n_samples=len(images), method='margin')
     
-    print(f"✓ Scores calculados para {len(images)} imágenes")
+    print(f" Scores calculados para {len(images)} imágenes")
     
     return probabilities, entropy_scores, margin_scores
 
@@ -129,7 +123,7 @@ def plot_uncertainty_analysis(images, labels, probabilities,
     Crea 5 gráficos, cada uno con 20 imágenes
     """
     
-    print(f"📊 Creando gráficos...")
+    print(f" Creando gráficos...")
     
     Path('results').mkdir(exist_ok=True)
     
@@ -169,8 +163,8 @@ def plot_uncertainty_analysis(images, labels, probabilities,
             high_m = is_high_margin[idx]
             
             # Emojis
-            emoji_e = '🎯' if high_e else '✓'
-            emoji_m = '🎯' if high_m else '✓'
+            emoji_e = 'BAD' if high_e else 'GOOD'
+            emoji_m = 'BAD' if high_m else 'GOOD'
             
             # Título con info
             title = f'Real: {CLASS_NAMES[true_label]}\n'
@@ -194,7 +188,7 @@ def plot_uncertainty_analysis(images, labels, probabilities,
         plt.tight_layout()
         filename = f'results/uncertainty_analysis_{graph_num+1}.png'
         plt.savefig(filename, dpi=150, bbox_inches='tight')
-        print(f"  ✓ Guardado: {filename}")
+        print(f"   Guardado: {filename}")
         plt.close()
 
 
@@ -205,7 +199,7 @@ def plot_uncertainty_analysis(images, labels, probabilities,
 def main():
     
     print("="*60)
-    print("🔬 ANÁLISIS DE UNCERTAINTY SAMPLING")
+    print(" ANÁLISIS DE UNCERTAINTY SAMPLING")
     print("="*60)
     print()
     
@@ -214,7 +208,7 @@ def main():
     model = load_model()
     
     print()
-    print(f"📋 Configuración:")
+    print(f" Configuración:")
     print(f"  - Dataset etiquetado: primeras {LABELED_SIZE} imágenes")
     print(f"  - Analizar: imágenes {START_INDEX}-{END_INDEX} (100 imágenes)")
     print()
@@ -230,7 +224,7 @@ def main():
     
     # Determinar cuáles son más inciertas (top 50%)
     print()
-    print(f"🎯 Identificando imágenes más inciertas (top 50%)...")
+    print(f" Identificando imágenes más inciertas (top 50%)...")
     
     is_high_entropy = get_top_uncertain_mask(entropy_scores, top_percent=50)
     is_high_margin = get_top_uncertain_mask(margin_scores, top_percent=50)
@@ -239,9 +233,9 @@ def main():
     high_margin_count = is_high_margin.sum()
     overlap = (is_high_entropy & is_high_margin).sum()
     
-    print(f"  ✓ Alta Entropy: {high_entropy_count} imágenes")
-    print(f"  ✓ Alto Margin: {high_margin_count} imágenes")
-    print(f"  ✓ Overlap: {overlap} imágenes en común")
+    print(f"   Alta Entropy: {high_entropy_count} imágenes")
+    print(f"   Alto Margin: {high_margin_count} imágenes")
+    print(f"   Overlap: {overlap} imágenes en común")
     
     # Crear gráficos
     print()
@@ -259,7 +253,7 @@ def main():
     # Estadísticas finales
     print()
     print("="*60)
-    print("📊 ESTADÍSTICAS")
+    print(" ESTADÍSTICAS")
     print("="*60)
     print(f"Entropy scores:")
     print(f"  Min: {entropy_scores.min():.3f}")
@@ -271,11 +265,15 @@ def main():
     print(f"  Max: {margin_scores.max():.3f}")
     print(f"  Mean: {margin_scores.mean():.3f}")
     print()
-    print("✅ Análisis completado!")
-    print(f"📁 Gráficos guardados en: results/uncertainty_analysis_*.png")
+    print(" Análisis completado!")
+    print(f" Gráficos guardados en: results/uncertainty_analysis_*.png")
     print()
-    print("🎯 = Alta incertidumbre (top 50%)")
-    print("✓ = Baja incertidumbre")
+    print(" = Alta incertidumbre (top 50%)")
+    print(" = Baja incertidumbre")
+
+    # Guardar índices de alta incertidumbre
+    np.save('results/uncertainty_indices.npy', np.where(is_high_entropy | is_high_margin)[0])
+    print("💾 Índices guardados: results/uncertainty_indices.npy")
 
 
 if __name__ == "__main__":

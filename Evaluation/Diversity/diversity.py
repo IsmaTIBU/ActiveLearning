@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 
 # Importar funciones desde AL_functions.py
-sys.path.append('/root')
+sys.path.insert(0, '../..')
 from AL_functions import diversity_sampling, get_feature_extractor
 from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import euclidean_distances
@@ -30,7 +30,7 @@ END_INDEX = 600     # Hasta 600 (100 imágenes)
 
 N_CLUSTERS = 20     # Número de clusters para K-Means
 
-MODEL_PATH = 'models/best_model.keras'
+MODEL_PATH = '../../models/500_train/best_model.keras'
 
 
 # ========================================
@@ -40,7 +40,7 @@ MODEL_PATH = 'models/best_model.keras'
 def load_data():
     """Carga CIFAR-10 filtrado"""
     
-    print("📥 Cargando CIFAR-10...")
+    print(" Cargando CIFAR-10...")
     (x_train, y_train), _ = keras.datasets.cifar10.load_data()
     
     # Filtrar clases
@@ -55,21 +55,21 @@ def load_data():
     # Normalizar
     x_train = x_train.astype('float32') / 255.0
     
-    print(f"✓ Dataset: {len(x_train)} imágenes")
+    print(f" Dataset: {len(x_train)} imágenes")
     return x_train, y_train
 
 
 def load_model():
     """Carga el modelo entrenado"""
-    
-    print(f"🧠 Cargando modelo: {MODEL_PATH}")
+    sys.path.insert(0, '..')
+    print(f" Cargando modelo: {MODEL_PATH}")
     
     if not Path(MODEL_PATH).exists():
-        print(f"❌ ERROR: No se encuentra el modelo en {MODEL_PATH}")
+        print(f" ERROR: No se encuentra el modelo en {MODEL_PATH}")
         exit(1)
     
     model = keras.models.load_model(MODEL_PATH)
-    print("✓ Modelo cargado")
+    print(" Modelo cargado")
     return model
 
 
@@ -87,14 +87,14 @@ def analyze_diversity(model, images_new, n_clusters=20):
         distances_to_centroid: distancia de cada imagen a su centroide
     """
     
-    print(f"📊 Aplicando Diversity Sampling (K={n_clusters})...")
+    print(f" Aplicando Diversity Sampling (K={n_clusters})...")
     
     # Usar diversity_sampling de AL_functions.py
     selected_indices, diversity_scores = diversity_sampling(
         model, images_new, n_samples=n_clusters
     )
     
-    print(f"✓ Diversity sampling completado")
+    print(f" Diversity sampling completado")
     print(f"  Seleccionadas: {len(selected_indices)} representantes (1 por cluster)")
     
     # Para análisis adicional, extraer features y asignar clusters manualmente
@@ -130,7 +130,7 @@ def plot_diversity_analysis(images, labels, selected_indices,
     Crea 5 gráficos, cada uno con 20 imágenes
     """
     
-    print(f"📊 Creando gráficos...")
+    print(f" Creando gráficos...")
     
     Path('results').mkdir(exist_ok=True)
     
@@ -179,17 +179,17 @@ def plot_diversity_analysis(images, labels, selected_indices,
             
             # Estado
             if selected:
-                title += '⭐ REPRESENTANTE'
+                title += 'CLUSTER CENTROID'
                 color = 'blue'
                 edge_color = 'blue'
                 edge_width = 3
             elif is_novel:
-                title += '🆕 Lejos del centroide'
+                title += 'FAR FROM CENTROID'
                 color = 'red'
                 edge_color = 'red'
                 edge_width = 2
             else:
-                title += '✅ Cerca del centroide'
+                title += 'NEAR CENTROID'
                 color = 'green'
                 edge_color = 'green'
                 edge_width = 1
@@ -217,7 +217,7 @@ def print_statistics(selected_indices, cluster_labels, distances, labels):
     
     print()
     print("="*60)
-    print("📊 ESTADÍSTICAS DE DIVERSITY")
+    print(" ESTADÍSTICAS DE DIVERSITY")
     print("="*60)
     
     # Distribución por cluster
@@ -225,13 +225,6 @@ def print_statistics(selected_indices, cluster_labels, distances, labels):
     unique, counts = np.unique(cluster_labels, return_counts=True)
     for cluster_id, count in zip(unique, counts):
         print(f"  Cluster {cluster_id:2d}: {count:2d} imágenes")
-    
-    # Distancias
-    print(f"\nDistancias al centroide:")
-    print(f"  Min:  {distances.min():.3f}")
-    print(f"  Max:  {distances.max():.3f}")
-    print(f"  Mean: {distances.mean():.3f}")
-    print(f"  Std:  {distances.std():.3f}")
     
     # Representantes seleccionados
     print(f"\nRepresentantes seleccionados: {len(selected_indices)}")
@@ -250,12 +243,6 @@ def print_statistics(selected_indices, cluster_labels, distances, labels):
     
     print(f"\nTotal imágenes LEJANAS: {is_far.sum()}/100 ({is_far.sum()}%)")
     print(f"Umbral usado: {threshold:.3f} (percentil 75)")
-    
-    print()
-    print("Leyenda:")
-    print("  ⭐ = Representante del cluster (seleccionada por diversity_sampling)")
-    print("  🆕 = Lejos del centroide (potencialmente interesante)")
-    print("  ✅ = Cerca del centroide (típica del cluster)")
 
 
 # ========================================
@@ -265,7 +252,7 @@ def print_statistics(selected_indices, cluster_labels, distances, labels):
 def main():
     
     print("="*60)
-    print("🎨 ANÁLISIS DE DIVERSITY SAMPLING")
+    print(" ANÁLISIS DE DIVERSITY SAMPLING")
     print("="*60)
     print()
     
@@ -274,7 +261,7 @@ def main():
     model = load_model()
     
     print()
-    print(f"📋 Configuración:")
+    print(f" Configuración:")
     print(f"  - Analizar: imágenes {START_INDEX}-{END_INDEX} (100 imágenes)")
     print(f"  - K-Means clusters: {N_CLUSTERS}")
     print()
@@ -288,7 +275,7 @@ def main():
     print()
     plot_diversity_analysis(
         x_train[START_INDEX:END_INDEX],
-        y_train[START_INDEX:END_INDEX],
+        y_train[START_INDEX:END_INDEX].flatten(),
         selected_indices,
         cluster_labels,
         distances,
@@ -300,12 +287,17 @@ def main():
         selected_indices,
         cluster_labels, 
         distances,
-        y_train[START_INDEX:END_INDEX]
+        y_train[START_INDEX:END_INDEX].flatten()
     )
     
     print()
-    print("✅ Análisis completado!")
-    print(f"📁 Gráficos guardados en: results/diversity_analysis_*.png")
+    print(" Análisis completado!")
+    print(f" Gráficos guardados en: results/diversity_analysis_*.png")
+
+    threshold = np.percentile(distances, 75)
+    is_far = distances > threshold
+    np.save('results/diversity_indices.npy', np.where(is_far)[0])
+    print("💾 Índices guardados: results/diversity_indices.npy")
 
 
 if __name__ == "__main__":

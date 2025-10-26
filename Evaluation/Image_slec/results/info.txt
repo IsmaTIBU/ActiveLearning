@@ -1,0 +1,29 @@
+IMÁGENES QUE CUMPLEN LAS 3 CARACTERÍSTICAS
+============================================================
+
+1. Alta incertidumbre (Uncertainty)
+2. Lejos del centroide (Diversity)
+3. Novedosa/rara (Novelty)
+
+============================================================
+
+Image: image_0517_class_0_Airplane.png
+  - Indice en dataset: 517
+  - Clase: 0 (Airplane)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0558_class_0_Airplane.png
+  - Indice en dataset: 558
+  - Clase: 0 (Airplane)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0572_class_1_Automobile.png
+  - Indice en dataset: 572
+  - Clase: 1 (Automobile)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0590_class_0_Airplane.png
+  - Indice en dataset: 590
+  - Clase: 0 (Airplane)
+  - Cumple: Uncertainty + Diversity + Novelty
+
