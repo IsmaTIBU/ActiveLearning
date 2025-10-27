@@ -35,7 +35,7 @@ test_labels = np.array(test_labels)
 print(f"Test set: {len(test_images)} images ({IMAGES_PER_CLASS} per class)")
 
 # Cargar modelos
-model1 = keras.models.load_model('500_train/best_model.keras')
+model1 = keras.models.load_model('700_random_train/best_model.keras')
 model2 = keras.models.load_model('700_train/best_model.keras')
 
 # Predecir
