@@ -25,8 +25,8 @@ SELECTED_CLASSES = [0, 1, 8]  # airplane, automobile, ship
 CLASS_NAMES = ['Airplane', 'Automobile', 'Ship']
 
 LABELED_SIZE = 500  # Primeras 500 para entrenar
-START_INDEX = 500   # Empezar análisis desde 501
-END_INDEX = 600     # Hasta 600 (100 imágenes)
+START_INDEX = 501   # Empezar análisis desde 501
+END_INDEX = 1000     # Hasta 600 (100 imágenes)
 
 N_CLUSTERS = 20     # Número de clusters para K-Means
 
@@ -241,7 +241,7 @@ def print_statistics(selected_indices, cluster_labels, distances, labels):
         total = (labels == class_id).sum()
         print(f"  {class_name:12s}: {count:2d}/{total:2d} ({count/total*100:.1f}%)")
     
-    print(f"\nTotal imágenes LEJANAS: {is_far.sum()}/100 ({is_far.sum()}%)")
+    print(f"\nTotal imágenes LEJANAS: {is_far.sum()}/{END_INDEX-START_INDEX} ({is_far.sum() / (END_INDEX-START_INDEX) * 100:.1f}%)")
     print(f"Umbral usado: {threshold:.3f} (percentil 75)")
 
 

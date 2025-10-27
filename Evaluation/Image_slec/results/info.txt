@@ -1,4 +1,4 @@
-IMÁGENES QUE CUMPLEN LAS 3 CARACTERÍSTICAS
+IMAGENES QUE CUMPLEN LAS 3 CARACTERISTICAS
 ============================================================
 
 1. Alta incertidumbre (Uncertainty)
@@ -7,9 +7,14 @@ IMÁGENES QUE CUMPLEN LAS 3 CARACTERÍSTICAS
 
 ============================================================
 
-Image: image_0517_class_0_Airplane.png
-  - Indice en dataset: 517
-  - Clase: 0 (Airplane)
+Image: image_0505_class_2_Ship.png
+  - Indice en dataset: 505
+  - Clase: 2 (Ship)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0557_class_2_Ship.png
+  - Indice en dataset: 557
+  - Clase: 2 (Ship)
   - Cumple: Uncertainty + Diversity + Novelty
 
 Image: image_0558_class_0_Airplane.png
@@ -22,8 +27,88 @@ Image: image_0572_class_1_Automobile.png
   - Clase: 1 (Automobile)
   - Cumple: Uncertainty + Diversity + Novelty
 
-Image: image_0590_class_0_Airplane.png
-  - Indice en dataset: 590
+Image: image_0587_class_2_Ship.png
+  - Indice en dataset: 587
+  - Clase: 2 (Ship)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0606_class_1_Automobile.png
+  - Indice en dataset: 606
+  - Clase: 1 (Automobile)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0682_class_1_Automobile.png
+  - Indice en dataset: 682
+  - Clase: 1 (Automobile)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0757_class_2_Ship.png
+  - Indice en dataset: 757
+  - Clase: 2 (Ship)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0811_class_0_Airplane.png
+  - Indice en dataset: 811
   - Clase: 0 (Airplane)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0817_class_2_Ship.png
+  - Indice en dataset: 817
+  - Clase: 2 (Ship)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0820_class_1_Automobile.png
+  - Indice en dataset: 820
+  - Clase: 1 (Automobile)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0829_class_1_Automobile.png
+  - Indice en dataset: 829
+  - Clase: 1 (Automobile)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0889_class_2_Ship.png
+  - Indice en dataset: 889
+  - Clase: 2 (Ship)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0900_class_2_Ship.png
+  - Indice en dataset: 900
+  - Clase: 2 (Ship)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0921_class_2_Ship.png
+  - Indice en dataset: 921
+  - Clase: 2 (Ship)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0924_class_1_Automobile.png
+  - Indice en dataset: 924
+  - Clase: 1 (Automobile)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0930_class_2_Ship.png
+  - Indice en dataset: 930
+  - Clase: 2 (Ship)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0944_class_0_Airplane.png
+  - Indice en dataset: 944
+  - Clase: 0 (Airplane)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0950_class_1_Automobile.png
+  - Indice en dataset: 950
+  - Clase: 1 (Automobile)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0957_class_1_Automobile.png
+  - Indice en dataset: 957
+  - Clase: 1 (Automobile)
+  - Cumple: Uncertainty + Diversity + Novelty
+
+Image: image_0961_class_2_Ship.png
+  - Indice en dataset: 961
+  - Clase: 2 (Ship)
   - Cumple: Uncertainty + Diversity + Novelty
 

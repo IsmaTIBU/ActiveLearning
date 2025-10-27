@@ -19,8 +19,8 @@ sys.path.insert(0, '..')
 
 SELECTED_CLASSES = [0, 1, 8]
 CLASS_NAMES = ['Airplane', 'Automobile', 'Ship']
-START_INDEX = 500
-END_INDEX = 600
+START_INDEX = 501
+END_INDEX = 1000
 
 MODEL_PATH = '/models/500_train/best_model.keras'
 

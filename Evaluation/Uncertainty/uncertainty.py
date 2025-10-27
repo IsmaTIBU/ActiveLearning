@@ -18,8 +18,8 @@ SELECTED_CLASSES = [0, 1, 8]  # airplane, automobile, ship
 CLASS_NAMES = ['Airplane', 'Automobile', 'Ship']
 
 LABELED_SIZE = 500  # Primeras 500 para entrenar
-START_INDEX = 500   # Empezar análisis desde 501
-END_INDEX = 600     # Hasta 600 (100 imágenes)
+START_INDEX = 501   # Empezar análisis desde 501
+END_INDEX = 1000     # Hasta 600 (100 imágenes)
 
 MODEL_PATH = '../../models/500_train/best_model.keras'  # o 'models/final_model.keras'
 
@@ -267,9 +267,6 @@ def main():
     print()
     print(" Análisis completado!")
     print(f" Gráficos guardados en: results/uncertainty_analysis_*.png")
-    print()
-    print(" = Alta incertidumbre (top 50%)")
-    print(" = Baja incertidumbre")
 
     # Guardar índices de alta incertidumbre
     np.save('results/uncertainty_indices.npy', np.where(is_high_entropy | is_high_margin)[0])
