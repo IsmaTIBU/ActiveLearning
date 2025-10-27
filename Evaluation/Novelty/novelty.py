@@ -1,271 +1,181 @@
-"""
-Análisis Visual de Novelty Detection
-Muestra cómo se detectan imágenes raras/nuevas usando KNN
-"""
-
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow import keras
 from pathlib import Path
 import sys
 
-# Importar funciones desde AL_functions.py
 sys.path.insert(0, '../..')
 from AL_functions import novelty_detection
 
 
-# ========================================
-# CONFIGURACIÓN
-# ========================================
-
 NUM_CLASSES = 3
-SELECTED_CLASSES = [0, 1, 8]  # airplane, automobile, ship
+SELECTED_CLASSES = [0, 1, 8]
 CLASS_NAMES = ['Airplane', 'Automobile', 'Ship']
-
-LABELED_SIZE = 500  # Primeras 500 para entrenar
-START_INDEX = 501   # Empezar análisis desde 501
-END_INDEX = 1000     # Hasta 600 (100 imágenes)
-
-K_NEIGHBORS = 5     # Número de vecinos más cercanos para KNN
-
 MODEL_PATH = '../../models/500_train/best_model.keras'
 
 
-# ========================================
-# 1. CARGAR DATOS Y MODELO
-# ========================================
-
-def load_data():
-    """Carga CIFAR-10 filtrado"""
-    
-    print("Cargando CIFAR-10...")
+def load_cifar10_filtered():
+    """Carga CIFAR-10 filtrado por clases seleccionadas"""
     (x_train, y_train), _ = keras.datasets.cifar10.load_data()
     
-    # Filtrar clases
     mask = np.isin(y_train.flatten(), SELECTED_CLASSES)
     x_train = x_train[mask]
     y_train = y_train[mask]
     
-    # Remapear labels
     for new_idx, old_idx in enumerate(SELECTED_CLASSES):
         y_train[y_train == old_idx] = new_idx
     
-    # Normalizar
     x_train = x_train.astype('float32') / 255.0
     
-    print(f"✓ Dataset: {len(x_train)} imágenes")
-    return x_train, y_train
+    return x_train, y_train.flatten()
 
 
-def load_model():
-    """Carga el modelo entrenado"""
-    
-    print(f"Cargando modelo: {MODEL_PATH}")
-    
-    if not Path(MODEL_PATH).exists():
-        print(f"ERROR: No se encuentra el modelo en {MODEL_PATH}")
-        exit(1)
-    
-    model = keras.models.load_model(MODEL_PATH)
-    print("✓ Modelo cargado")
-    return model
-
-
-# ========================================
-# 2. APLICAR NOVELTY DETECTION
-# ========================================
-
-def analyze_novelty(model, labeled_data, unlabeled_data, k=5):
-    """
-    Aplica novelty_detection y analiza los resultados
-    
-    Returns:
-        novelty_scores: score de novedad para cada imagen
-    """
-    
-    print(f"Aplicando Novelty Detection (K={k})...")
-    
-    # Usar novelty_detection de AL_functions.py
+def calculate_novelty(model, labeled_data, unlabeled_data, k=5):
+    """Calcula scores de novelty usando KNN"""
     _, novelty_scores = novelty_detection(
-        model, unlabeled_data, labeled_data, n_samples=50, k=k
+        model, unlabeled_data, labeled_data, n_samples=len(unlabeled_data), k=k
     )
-    
-    print(f"✓ Novelty detection completado")
-    print(f"  Score = distancia media a los {k} vecinos más cercanos")
-    
     return novelty_scores
 
 
-# ========================================
-# 3. VISUALIZACIÓN
-# ========================================
-
-def plot_novelty_analysis(images, labels, novelty_scores, start_idx):
-    """
-    Crea 5 gráficos, cada uno con 20 imágenes
-    """
-    
-    print(f"Creando gráficos...")
-    
-    Path('results').mkdir(exist_ok=True)
-    
-    # Calcular umbral (percentil 75 = top 25% más novedosas)
-    threshold = np.percentile(novelty_scores, 75)
+def get_novel_indices(novelty_scores, threshold_percentile=75):
+    """Retorna índices de imágenes novedosas/raras"""
+    threshold = np.percentile(novelty_scores, threshold_percentile)
     is_novel = novelty_scores > threshold
+    return np.where(is_novel)[0], is_novel
+
+
+def visualize_novelty(images, labels, novelty_scores, is_novel, 
+                      start_idx, output_dir='results'):
+    """Genera visualizaciones de novelty analysis"""
+    Path(output_dir).mkdir(exist_ok=True, parents=True)
     
-    # 5 gráficos de 20 imágenes cada uno
-    for graph_num in range(5):
-        
+    num_images = len(images)
+    num_graphs = (num_images + 19) // 20
+    
+    for graph_num in range(num_graphs):
         fig, axes = plt.subplots(4, 5, figsize=(18, 14))
-        fig.suptitle(f'Novelty Detection Analysis (KNN) - Gráfico {graph_num+1}/5\n'
-                    f'Imágenes {start_idx + graph_num*20} - {start_idx + (graph_num+1)*20}',
+        fig.suptitle(f'Novelty Detection Analysis (KNN) - Graph {graph_num+1}/{num_graphs}\n'
+                    f'Images {start_idx + graph_num*20} - {start_idx + min((graph_num+1)*20, num_images)}',
                     fontsize=16, fontweight='bold')
         
-        # 20 imágenes por gráfico
         for i in range(20):
             idx = graph_num * 20 + i
-            
-            if idx >= len(images):
+            if idx >= num_images:
                 break
             
-            row = i // 5
-            col = i % 5
+            row, col = i // 5, i % 5
             ax = axes[row, col]
             
-            # Mostrar imagen
             ax.imshow(images[idx])
             ax.axis('off')
             
-            # Información
             true_label = int(labels[idx])
             score = novelty_scores[idx]
-            novel = is_novel[idx]
             
-            # Título con info
             title = f'Real: {CLASS_NAMES[true_label]}\n'
-            title += f'Novelty Score: {score:.3f}\n'
+            title += f'Novelty: {score:.3f}\n'
             
-            # Estado
-            if novel:
-                title += 'NOVELTY'
-                color = 'red'
-                edge_color = 'red'
-                edge_width = 3
+            if is_novel[idx]:
+                title += 'NOVEL'
+                color, edge_color, edge_width = 'red', 'red', 3
             else:
                 title += 'KNOWN'
-                color = 'green'
-                edge_color = 'green'
-                edge_width = 1
+                color, edge_color, edge_width = 'green', 'green', 1
             
             ax.set_title(title, fontsize=8, color=color, fontweight='bold')
-            
-            # Borde
             for spine in ax.spines.values():
                 spine.set_edgecolor(edge_color)
                 spine.set_linewidth(edge_width)
         
         plt.tight_layout()
-        filename = f'results/novelty_analysis_{graph_num+1}.png'
-        plt.savefig(filename, dpi=150, bbox_inches='tight')
-        print(f"  ✓ Guardado: {filename}")
+        plt.savefig(f'{output_dir}/novelty_analysis_{graph_num+1}.png', dpi=150, bbox_inches='tight')
         plt.close()
 
 
-# ========================================
-# 4. ESTADÍSTICAS
-# ========================================
+def analyze_novelty(model_path, labeled_size, start_idx, end_idx, k_neighbors=5,
+                    output_dir='results', verbose=True):
+    """
+    Análisis completo de novelty para un rango de imágenes
+    
+    Args:
+        model_path: Ruta al modelo .keras
+        labeled_size: Número de imágenes etiquetadas (desde índice 0)
+        start_idx: Índice inicial del rango a analizar
+        end_idx: Índice final del rango a analizar
+        k_neighbors: Número de vecinos más cercanos para KNN
+        output_dir: Directorio para guardar resultados
+        verbose: Mostrar mensajes de progreso
+        
+    Returns:
+        novel_indices: Índices de imágenes novedosas
+        novelty_scores: Scores de novelty para cada imagen
+    """
+    if verbose:
+        print(f"Loading data and model...")
+    
+    x_train, y_train = load_cifar10_filtered()
+    model = keras.models.load_model(model_path)
+    
+    labeled_data = x_train[:labeled_size]
+    unlabeled_data = x_train[start_idx:end_idx]
+    labels = y_train[start_idx:end_idx]
+    
+    if verbose:
+        print(f"Labeled dataset: {labeled_size} images")
+        print(f"Analyzing {len(unlabeled_data)} images ({start_idx}-{end_idx})...")
+        print(f"K-neighbors: {k_neighbors}")
+    
+    novelty_scores = calculate_novelty(model, labeled_data, unlabeled_data, k_neighbors)
+    novel_indices, is_novel = get_novel_indices(novelty_scores, threshold_percentile=75)
+    
+    if verbose:
+        print(f"Found {len(novel_indices)} novel images ({len(novel_indices)/len(unlabeled_data)*100:.1f}%)")
+    
+    # visualize_novelty(unlabeled_data, labels, novelty_scores, is_novel, start_idx, output_dir)
+    
+    Path(output_dir).mkdir(exist_ok=True, parents=True)
+    np.save(f'{output_dir}/novelty_indices.npy', novel_indices)
+    
+    if verbose:
+        print(f"Results saved to {output_dir}/")
+    
+    return novel_indices, novelty_scores
 
-def print_statistics(novelty_scores, labels, k):
-    """Imprime estadísticas de novelty"""
-    
-    print()
-    print("="*60)
-    print("📊 ESTADÍSTICAS DE NOVELTY")
-    print("="*60)
-    
-    # Scores
-    print(f"\nNovelty Scores (distancia media a {k} vecinos):")
-    print(f"  Min:  {novelty_scores.min():.3f}")
-    print(f"  Max:  {novelty_scores.max():.3f}")
-    print(f"  Mean: {novelty_scores.mean():.3f}")
-    print(f"  Std:  {novelty_scores.std():.3f}")
-    
-    # Umbral
-    threshold = np.percentile(novelty_scores, 75)
-    is_novel = novelty_scores > threshold
-    
-    # Imágenes novedosas por clase
-    print(f"\nImágenes NOVEDOSAS/RARAS (top 25%) por clase:")
-    for class_id, class_name in enumerate(CLASS_NAMES):
-        mask = (labels == class_id) & is_novel
-        count = mask.sum()
-        total = (labels == class_id).sum()
-        print(f"  {class_name:12s}: {count:2d}/{total:2d} ({count/total*100:.1f}%)")
-    
-    print(f"\nTotal imágenes NOVEDOSAS: {is_novel.sum()}/{END_INDEX-START_INDEX} ({is_novel.sum() / (END_INDEX-START_INDEX) * 100:.1f}%)")
-    print(f"Umbral usado: {threshold:.3f} (percentil 75)")
-    
-    print()
-    print("💡 Interpretación:")
-    print("  - Score ALTO → imagen MUY diferente a las 500 etiquetadas")
-    print("  - Score BAJO → imagen similar a las ya vistas")
-    print("  - 🆕 NOVEL/RARE = potencialmente interesante para etiquetar")
-
-
-# ========================================
-# 5. MAIN
-# ========================================
 
 def main():
+    """Ejecución standalone con parámetros por defecto"""
+    LABELED_SIZE = 500
+    START_INDEX = 501
+    END_INDEX = 1000
+    K_NEIGHBORS = 5
     
     print("="*60)
-    print("🔍 ANÁLISIS DE NOVELTY DETECTION")
+    print("NOVELTY DETECTION ANALYSIS")
     print("="*60)
+    print(f"Labeled dataset: first {LABELED_SIZE} images")
+    print(f"Analyzing: images {START_INDEX}-{END_INDEX}")
+    print(f"K-neighbors: {K_NEIGHBORS}")
     print()
     
-    # Cargar datos y modelo
-    x_train, y_train = load_data()
-    model = load_model()
-    
-    print()
-    print(f"📋 Configuración:")
-    print(f"  - Dataset etiquetado: primeras {LABELED_SIZE} imágenes")
-    print(f"  - Analizar: imágenes {START_INDEX}-{END_INDEX} (100 imágenes)")
-    print(f"  - K vecinos más cercanos: {K_NEIGHBORS}")
-    print()
-    
-    # Aplicar novelty detection usando AL_functions.py
-    novelty_scores = analyze_novelty(
-        model,
-        x_train[:LABELED_SIZE],           # Labeled (500)
-        x_train[START_INDEX:END_INDEX],   # Unlabeled (100)
-        k=K_NEIGHBORS
-    )
-    
-    # Crear gráficos
-    print()
-    plot_novelty_analysis(
-        x_train[START_INDEX:END_INDEX],
-        y_train[START_INDEX:END_INDEX].flatten(),
-        novelty_scores,
-        START_INDEX
-    )
-    
-    # Estadísticas
-    print_statistics(
-        novelty_scores,
-        y_train[START_INDEX:END_INDEX].flatten(),
-        K_NEIGHBORS
+    novel_indices, scores = analyze_novelty(
+        model_path=MODEL_PATH,
+        labeled_size=LABELED_SIZE,
+        start_idx=START_INDEX,
+        end_idx=END_INDEX,
+        k_neighbors=K_NEIGHBORS,
+        output_dir='results',
+        verbose=True
     )
     
     print()
-    print("✅ Análisis completado!")
-    print(f"📁 Gráficos guardados en: results/novelty_analysis_*.png")
-
-    threshold = np.percentile(novelty_scores, 75)
-    is_novel = novelty_scores > threshold
-    np.save('results/novelty_indices.npy', np.where(is_novel)[0])
-    print("💾 Índices guardados: results/novelty_indices.npy")
+    print("="*60)
+    print("STATISTICS")
+    print("="*60)
+    print(f"Novelty scores - Min: {scores.min():.3f}, Max: {scores.max():.3f}, Mean: {scores.mean():.3f}")
+    print(f"Threshold (75th percentile): {np.percentile(scores, 75):.3f}")
+    print()
+    print("Analysis completed!")
 
 
 if __name__ == "__main__":
