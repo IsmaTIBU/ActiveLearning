@@ -3,6 +3,8 @@
 This project provides a comprehensive and modular **framework for analysis and sample selection** within the context of **Active Learning (AL)**, specifically applied to image classification tasks using TensorFlow/Keras.
 
 The primary objective is to identify and select the **most informative subset of data** from a large unlabeled pool, thereby maximizing model performance gains with minimal labeling effort.
+> [!Note]  
+> [CLICK HERE](https://github.com/IsmaTIBU/ActiveLearning/blob/main/models/README.md) to see an overview of the benefits of using Active Learning for model training 
 
 -----
 
