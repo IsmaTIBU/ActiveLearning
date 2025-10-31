@@ -1,358 +1,157 @@
-# Active Learning Analysis - Refactored Library System
+# Active Learning Analysis Framework
 
-## Estructura del Sistema
+This project provides a comprehensive and modular **framework for analysis and sample selection** within the context of **Active Learning (AL)**, specifically applied to image classification tasks using TensorFlow/Keras.
 
-El código ha sido refactorizado en **librerías modulares** que pueden:
-1. **Ejecutarse independientemente** con parámetros por defecto
-2. **Ser importadas** desde un programa centralizador con parámetros personalizados
+The primary objective is to identify and select the **most informative subset of data** from a large unlabeled pool, thereby maximizing model performance gains with minimal labeling effort.
+
+-----
+
+## 1\. Active Learning Rationale and Use Cases
+
+**Active Learning (AL)** is a machine learning paradigm where the learning algorithm interactively queries an "oracle" (a human expert) to obtain labels for new data points.
+
+### Key Use Cases:
+
+| Use Case | Description |
+| :--- | :--- |
+| **Cost Efficiency** | Data labeling is often the most significant bottleneck in ML projects. AL minimizes this expense by requesting labels only for data points most beneficial to the model's performance. |
+| **Limited Budget** | This approach is essential when constraints—whether budgetary, time-related, or human resource-related—prevent the labeling of the entire dataset. |
+| **Model Focus** | AL allows for directing the sampling process to improve accuracy in under-represented classes or target specific regions of the feature space where the model exhibits high uncertainty. |
+
+-----
+
+## 2\. Methodology: The Combined Sampling Strategy
+
+The core of this framework is identifying images that simultaneously satisfy three critical criteria, ensuring that the selected samples are of the highest quality for model improvement.
+
+The overall recommended set is the **intersection** of the indices selected by the three following heuristics, as implemented in `AL_functions.py`:
+
+1.  **Uncertainty Sampling:** Selects images where the current model is least confident in its prediction (e.g., high entropy or a low margin between the top two predicted probabilities).
+2.  **Diversity Sampling:** Selects images that are diverse and representative of different regions in the feature space, typically those furthest from their cluster centroids in a K-Means clustering of the features.
+3.  **Novelty Detection:** Selects images considered rare or novel compared to the already labeled dataset, preventing the model from focusing only on known examples.
+
+-----
+
+## 3\. Project Structure
+
+The code is refactored into **modular libraries**, enabling both standalone execution and unified control through the `ActiveLearningAnalyzer` class.
 
 ```
 .
-├── uncertainty_lib.py            # Librería de uncertainty sampling
-├── diversity_lib.py              # Librería de diversity sampling
-├── novelty_lib.py                # Librería de novelty detection
-├── image_selection_lib.py        # Librería de análisis de intersección
-└── active_learning_analyzer.py   # Programa centralizador
+├── AL_functions.py             # Core implementation of sampling heuristics.
+├── AL_cycle.py                 # Centralized program (ActiveLearningAnalyzer class).
+├── train.py                    # Script for loading CIFAR-10 data and training the base MobileNetV3 model.
+├── Evaluation/
+│   ├── Uncertainty/            # Module for Uncertainty analysis.
+│   ├── Diversity/              # Module for Diversity analysis.
+│   ├── Novelty/                # Module for Novelty analysis.
+│   └── Image_selec/            # Module for index intersection analysis.
+└── requirements.txt            # Project dependencies.
 ```
 
----
+-----
 
-## 1. Uso Independiente (Standalone)
+## 4\. Getting Started
 
-Cada librería puede ejecutarse directamente con parámetros por defecto:
+### 4.1. Prerequisites and Installation
+
+The framework requires several standard machine learning and utility packages.
+
+1.  Clone the repository:
+    ```bash
+    # Assuming the project is downloaded or cloned locally
+    cd ActiveLearning
+    ```
+2.  Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+    *Core dependencies include: `tensorflow`, `keras`, `scikit-learn`, `modAL-python`, `numpy`, and `matplotlib`.*
+
+### 4.2. Training the Base Model (Model 1)
+
+The Active Learning cycle begins with a model trained on a small initial labeled set.
 
 ```bash
-# Ejecutar uncertainty analysis
-python uncertainty_lib.py
-
-# Ejecutar diversity analysis
-python diversity_lib.py
-
-# Ejecutar novelty detection
-python novelty_lib.py
-
-# Ejecutar intersection analysis (requiere los 3 anteriores)
-python image_selection_lib.py
+# Trains the base model using the first 500 images of the filtered CIFAR-10 data.
+python train.py
+# The model will be saved to: models/best_model.keras
 ```
 
-**Parámetros por defecto en modo standalone:**
-- `LABELED_SIZE = 500`
-- `START_INDEX = 501`
-- `END_INDEX = 1000`
+### 4.3. Execution Modes
 
----
+The framework supports two primary execution modes:
 
-## 2. Uso como Librería
+#### A. Centralized Execution (Recommended)
 
-### 2.1 Importación Básica
+Use `AL_cycle.py` and the `ActiveLearningAnalyzer` class for a complete, structured analysis with class balance validation and potential retraining.
 
 ```python
-from uncertainty_lib import analyze_uncertainty
-from diversity_lib import analyze_diversity
-from novelty_lib import analyze_novelty
-from image_selection_lib import analyze_intersection
+from AL_cycle import ActiveLearningAnalyzer
 
-# Ejecutar análisis con parámetros personalizados
-uncertain_indices, scores = analyze_uncertainty(
-    model_path='path/to/model.keras',
-    start_idx=100,
-    end_idx=500,
-    output_dir='my_results/uncertainty',
-    threshold_percentile=60,
-    verbose=True
-)
+# Define analysis parameters
+MODEL_PATH = 'models/500_train/best_model.keras'
+LABELED_SIZE = 500
+START_INDEX = 501
+END_INDEX = 4000
 
-diverse_indices, info = analyze_diversity(
-    model_path='path/to/model.keras',
-    start_idx=100,
-    end_idx=500,
-    n_clusters=30,
-    output_dir='my_results/diversity',
-    verbose=True
-)
-
-novel_indices, scores = analyze_novelty(
-    model_path='path/to/model.keras',
-    labeled_size=300,
-    start_idx=100,
-    end_idx=500,
-    k_neighbors=10,
-    output_dir='my_results/novelty',
-    verbose=True
-)
-
-# Análisis de intersección
-intersection, stats = analyze_intersection(
-    uncertainty_indices=uncertain_indices,
-    diversity_indices=diverse_indices,
-    novelty_indices=novel_indices,
-    start_idx=100,
-    end_idx=500,
-    output_dir='my_results/intersection',
-    save_images=True,
-    create_visualization=True,
-    verbose=True
-)
-```
-
-### 2.2 Parámetros Editables
-
-#### `analyze_uncertainty()`
-- `model_path`: Ruta al modelo .keras
-- `start_idx`: Índice inicial del rango a analizar
-- `end_idx`: Índice final del rango a analizar
-- `output_dir`: Directorio para guardar resultados
-- `threshold_percentile`: Percentil para considerar alta incertidumbre (default=50)
-- `verbose`: Mostrar mensajes de progreso
-
-**Returns:**
-- `uncertain_indices`: np.array con índices de imágenes inciertas
-- `scores`: Dict con `entropy`, `margin`, `probabilities`
-
-#### `analyze_diversity()`
-- `model_path`: Ruta al modelo .keras
-- `start_idx`: Índice inicial
-- `end_idx`: Índice final
-- `n_clusters`: Número de clusters para K-Means (default=20)
-- `output_dir`: Directorio de salida
-- `verbose`: Verbosidad
-
-**Returns:**
-- `diverse_indices`: np.array con índices de imágenes diversas
-- `info`: Dict con `cluster_labels`, `distances`, `selected_indices`
-
-#### `analyze_novelty()`
-- `model_path`: Ruta al modelo .keras
-- `labeled_size`: Número de imágenes etiquetadas (desde índice 0)
-- `start_idx`: Índice inicial
-- `end_idx`: Índice final
-- `k_neighbors`: Número de vecinos para KNN (default=5)
-- `output_dir`: Directorio de salida
-- `verbose`: Verbosidad
-
-**Returns:**
-- `novel_indices`: np.array con índices de imágenes novedosas
-- `novelty_scores`: np.array con scores de novelty
-
-#### `analyze_intersection()`
-- `uncertainty_indices`: Índices de uncertainty (array o lista)
-- `diversity_indices`: Índices de diversity (array o lista)
-- `novelty_indices`: Índices de novelty (array o lista)
-- `start_idx`: Índice inicial del rango analizado
-- `end_idx`: Índice final del rango analizado
-- `output_dir`: Directorio de salida
-- `save_images`: Si guardar imágenes individuales (default=True)
-- `create_visualization`: Si crear visualización combinada (default=True)
-- `verbose`: Verbosidad
-
-**Returns:**
-- `intersection_indices`: Lista con índices que cumplen los 3 criterios
-- `stats`: Dict con `count`, `distribution`, `percentage`
-
-#### `analyze_intersection_from_files()`
-Variante que carga índices desde archivos .npy:
-- `uncertainty_file`: Path al archivo uncertainty_indices.npy
-- `diversity_file`: Path al archivo diversity_indices.npy
-- `novelty_file`: Path al archivo novelty_indices.npy
-- (resto de parámetros igual que `analyze_intersection`)
-
----
-
-## 3. Programa Centralizador
-
-El programa `active_learning_analyzer.py` proporciona una interfaz unificada:
-
-```python
-from active_learning_analyzer import ActiveLearningAnalyzer
-
-# Crear analizador con parámetros configurables
+# Instantiate the analyzer, setting a target of 50 optimal images per class
 analyzer = ActiveLearningAnalyzer(
-    model_path='models/500_train/best_model.keras',
-    labeled_size=500,
-    start_idx=501,
-    end_idx=1000
+    model_path=MODEL_PATH,
+    labeled_size=LABELED_SIZE,
+    start_idx=START_INDEX,
+    end_idx=END_INDEX,
+    target_per_class=50
 )
 
-# Opción 1: Ejecutar análisis individual
-uncertain_indices, scores = analyzer.run_uncertainty(
-    threshold_percentile=50,
-    output_dir='results/uncertainty'
-)
-
-# Opción 2: Ejecutar todos los análisis
+# Run all three analyses and find the intersection
 analyzer.run_all(
     uncertainty_params={'threshold_percentile': 50},
     diversity_params={'n_clusters': 20},
     novelty_params={'k_neighbors': 5}
 )
 
-# Encontrar intersección (imágenes que cumplen las 3 características)
-intersection = analyzer.find_intersection(output_dir='results/intersection')
+intersection, stats = analyzer.find_intersection()
 
-# Obtener resumen
+# If class targets are met, the model will be retrained automatically.
 print(analyzer.get_summary())
 ```
 
-### 3.1 Métodos del ActiveLearningAnalyzer
+#### B. Standalone Execution
 
-```python
-# Constructor
-ActiveLearningAnalyzer(model_path, labeled_size, start_idx, end_idx)
+Each analysis module in the `Evaluation/` directory can be executed independently using default parameters (analyzing images 501-1000).
 
-# Ejecutar análisis individuales
-analyzer.run_uncertainty(**params)
-analyzer.run_diversity(**params)
-analyzer.run_novelty(**params)
-
-# Ejecutar todos
-analyzer.run_all(uncertainty_params, diversity_params, novelty_params)
-
-# Encontrar intersección
-analyzer.find_intersection(output_dir)
-
-# Obtener resumen
-analyzer.get_summary()
-```
-
----
-
-## 4. Ejemplo Completo de Uso Centralizado
-
-```python
-from active_learning_analyzer import ActiveLearningAnalyzer
-
-# Configurar parámetros centralizados
-CONFIG = {
-    'model_path': 'models/500_train/best_model.keras',
-    'labeled_size': 500,
-    'start_idx': 501,
-    'end_idx': 1000
-}
-
-# Crear analizador
-analyzer = ActiveLearningAnalyzer(**CONFIG)
-
-# Ejecutar análisis completo
-results = analyzer.run_all(
-    uncertainty_params={
-        'threshold_percentile': 50,
-        'output_dir': 'results/uncertainty',
-        'verbose': True
-    },
-    diversity_params={
-        'n_clusters': 20,
-        'output_dir': 'results/diversity',
-        'verbose': True
-    },
-    novelty_params={
-        'k_neighbors': 5,
-        'output_dir': 'results/novelty',
-        'verbose': True
-    }
-)
-
-# Análisis de intersección
-intersection = analyzer.find_intersection('results/intersection')
-
-# Imprimir resumen
-print(analyzer.get_summary())
-
-# Acceder a resultados
-print(f"Uncertain images: {len(results['uncertainty']['indices'])}")
-print(f"Diverse images: {len(results['diversity']['indices'])}")
-print(f"Novel images: {len(results['novelty']['indices'])}")
-print(f"Intersection: {len(intersection)}")
-```
-
----
-
-## 5. Outputs Generados
-
-Cada análisis genera:
-
-### Archivos de Visualización
-- `uncertainty_analysis_*.png` (1-5 gráficos de 20 imágenes)
-- `diversity_analysis_*.png` (1-5 gráficos de 20 imágenes)
-- `novelty_analysis_*.png` (1-5 gráficos de 20 imágenes)
-
-### Archivos de Datos
-- `uncertainty_indices.npy`: Índices de imágenes inciertas
-- `diversity_indices.npy`: Índices de imágenes diversas
-- `novelty_indices.npy`: Índices de imágenes novedosas
-- `intersection_indices.npy`: Índices de intersección
-
-### Archivos de Resumen
-- `summary.txt`: Resumen de la intersección
-
----
-
-## 6. Ventajas del Sistema Refactorizado
-
-✅ **Modularidad**: Cada componente es independiente  
-✅ **Reutilizabilidad**: Funciones pueden ser llamadas desde cualquier script  
-✅ **Parametrización**: Todos los parámetros son configurables  
-✅ **Centralización**: Un solo punto de control para múltiples análisis  
-✅ **Flexibilidad**: Uso standalone o como librería  
-✅ **Limpieza**: Sin prints innecesarios ni comentarios redundantes  
-
----
-
-## 7. Migración desde Código Original
-
-### Antes (Código Original)
-```python
-# Parámetros hardcodeados en el archivo
-LABELED_SIZE = 500
-START_INDEX = 501
-END_INDEX = 1000
-
-# Ejecutar script
+```bash
+# Run uncertainty analysis (saves results/uncertainty/uncertainty_indices.npy)
 python Evaluation/Uncertainty/uncertainty.py
+
+# Run diversity analysis (saves results/diversity/diversity_indices.npy)
+python Evaluation/Diversity/diversity.py
+
+# Run intersection analysis (requires the .npy files from the previous three steps)
+python Evaluation/Image_selec/image_selection.py
 ```
 
-### Ahora (Sistema Refactorizado)
-```python
-# Parámetros configurables desde código externo
-from uncertainty_lib import analyze_uncertainty
+-----
 
-uncertain_indices, scores = analyze_uncertainty(
-    model_path='models/best_model.keras',
-    start_idx=501,
-    end_idx=1000,
-    verbose=True
-)
-```
+## 5\. Key Functions and Outputs
 
----
+### Function Parameters Summary
 
-## 8. Notas Importantes
+| Function | Key Parameters | Default Value | Purpose |
+| :--- | :--- | :--- | :--- |
+| `analyze_uncertainty()` | `threshold_percentile` | 50 | Defines the threshold for high uncertainty images. |
+| `analyze_diversity()` | `n_clusters` | 20 | Number of K-Means clusters to select representatives from. |
+| `analyze_novelty()` | `k_neighbors` | 5 | Number of nearest neighbors for KNN novelty scoring. |
+| `analyze_intersection()` | `save_images`, `create_visualization` | True | Controls saving individual images and the combined visualization. |
 
-1. **Paths relativos**: Las librerías asumen que `AL_functions.py` está dos niveles arriba
-2. **Modelos**: El modelo debe estar en formato `.keras`
-3. **CIFAR-10**: Las librerías cargan y filtran CIFAR-10 automáticamente
-4. **Verbosidad**: Control con `verbose=True/False` para silenciar outputs
-5. **Resultados**: Los índices retornados son relativos al rango analizado (0-indexed)
+### Generated Outputs
 
----
+Each analysis generates data and visualization files in its respective `results/` subdirectory:
 
-## 9. Troubleshooting
-
-**Error: "No module named AL_functions"**
-```python
-# Ajustar path si es necesario
-sys.path.insert(0, 'path/to/AL_functions')
-```
-
-**Error: "Model not found"**
-```python
-# Verificar que el modelo existe
-from pathlib import Path
-if not Path(model_path).exists():
-    print(f"Model not found: {model_path}")
-```
-
-**Memoria insuficiente**
-```python
-# Reducir batch_size en las funciones que predicen
-# O reducir el rango de análisis (end_idx - start_idx)
-```
+| Type of File | Example | Purpose |
+| :--- | :--- | :--- |
+| **Index File** | `intersection_indices.npy` | Array of indices (relative to `start_idx`) meeting all 3 criteria. |
+| **Summary** | `summary.txt` | Detailed report on the intersection and class distribution. |
+| **Visualizations** | `uncertainty_analysis_1.png` | Plot showing image scores and selection status. |
+| **Intersection Viz.** | `intersection_visualization.png` | Single plot of all images selected by the intersection. |\<ctrl63\>
